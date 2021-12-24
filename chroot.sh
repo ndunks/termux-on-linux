@@ -8,7 +8,6 @@ chroot_add_mount() {
 }
 
 chroot_setup() {
-  echo "Setup service.."
   CHROOT_ACTIVE_MOUNTS=()
   [[ $(trap -p EXIT) ]] && die '(BUG): attempting to overwrite existing EXIT trap'
   trap 'chroot_teardown' EXIT
@@ -21,7 +20,6 @@ chroot_setup() {
 }
 
 chroot_teardown() {
-    echo "Cleaning service.."
   if (( ${#CHROOT_ACTIVE_MOUNTS[@]} )); then
     umount "${CHROOT_ACTIVE_MOUNTS[@]}"
   fi
