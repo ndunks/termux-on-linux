@@ -28,5 +28,12 @@ chroot_teardown() {
 
 chroot_setup "$TARGET" || exit 1
 
-unshare --fork --pid chroot --userspec=1000:1000 "$TARGET" \
-    env -i /usr/bin/login "$@"
+run_command=(/system/bin/busybox env -i PATH=/bin:/system/bin)
+if [ "$#" == 0 ]; then
+    run_command+=(login)
+else
+    run_command+=("$@")
+fi
+
+echo "CMD ${run_command[@]}"
+unshare --fork --pid chroot --userspec=1000:1000 -- "$TARGET" "${run_command[@]}"
