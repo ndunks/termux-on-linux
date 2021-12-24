@@ -23,16 +23,15 @@ fi
 # Extract bootstrap archive and create symlinks.
 if [ ! -e $CURRENT_DIR/bootstrap-x86_64.zip ]; then
     wget -q -O $CURRENT_DIR/bootstrap-x86_64.zip https://github.com/termux/termux-packages/releases/download/bootstrap-2021.12.19-r1/bootstrap-x86_64.zip
-    mkdir -p $TERMUX_DIR
-
-    pushd $TERMUX_DIR
-
-    mkdir ../cache ./usr ./home
-
-    unzip -d usr $CURRENT_DIR/bootstrap-x86_64.zip
-    popd
 fi
-if [ -f $TERMUX_DIR/usr ]; then
+
+mkdir -p $TERMUX_DIR
+pushd $TERMUX_DIR
+mkdir -p ../cache ./usr ./home
+unzip -d usr $CURRENT_DIR/bootstrap-x86_64.zip
+popd
+
+if [ ! -f $TERMUX_DIR/usr ]; then
     pushd $TERMUX_DIR/usr
     cat SYMLINKS.txt | while read -r line; do
         dest=$(echo "$line" | awk -F '←' '{ print $1 }');
@@ -43,11 +42,11 @@ if [ -f $TERMUX_DIR/usr ]; then
     popd
 fi
 
-ln -fs /data/data/com.termux/files/usr $TARGET/usr
-ln -fs /data/data/com.termux/files/usr/bin $TARGET/bin
-ln -fs /data/data/com.termux/files/usr/tmp $TARGET/tmp
+sudo ln -s /data/data/com.termux/files/usr $TARGET/usr
+sudo ln -s /data/data/com.termux/files/usr/bin $TARGET/bin
+sudo ln -s /data/data/com.termux/files/usr/tmp $TARGET/tmp
 
-sudo chown -Rh 0:0 $TARGET/system
+sudo chown -Rh 0:0 $TARGET
 sudo chown -Rh 1000:1000 $TARGET/data/data/com.termux
 sudo chown 1000:1000 $TARGET/system/etc/hosts $TARGET/system/etc/static-dns-hosts.txt
 find $TARGET/system -type d -exec sudo chmod 755 "{}" \;
@@ -76,3 +75,7 @@ export SHELL=/data/data/com.termux/files/usr/bin/sh
 EOF
 
 sudo chmod +x $TERMUX_DIR/usr/etc/profile.d/chroot-cfg.sh
+sudo sed -i 's/deb /deb [trusted=yes] /g' $TERMUX_DIR/usr/etc/apt/sources.list
+sudo ./chroot.sh sh -c 'apt update && \
+    apt --allow-unauthenticated -y upgrade && \
+    apt install --allow-unauthenticated -y termux-keyring'
